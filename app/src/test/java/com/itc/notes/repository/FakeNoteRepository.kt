@@ -1,6 +1,6 @@
 package com.itc.notes.repository
 
-import com.itc.notes.data.repository.NoteRepository
+import com.itc.notes.domain.repository.NoteRepository
 
 class FakeNoteRepository: NoteRepository {
     override suspend fun getNotes(): List<String> {

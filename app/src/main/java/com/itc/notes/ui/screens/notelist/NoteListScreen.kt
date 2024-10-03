@@ -24,6 +24,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.compose.material3.Icon
 import androidx.compose.material3.TopAppBar
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.itc.notes.domain.model.Note
 import com.itc.notes.ui.common.CircularIndeterminateProgressBar
 import com.itc.notes.ui.common.UiState
 import com.itc.notes.ui.theme.NotesTheme
@@ -67,11 +68,11 @@ fun NoteListScreen(
                         CircularIndeterminateProgressBar(verticalBias = 0.5f)
                     }
 
-                    is UiState.Success<List<String>> -> {
+                    is UiState.Success<*> -> {
                         NoteListContent(
                             paddingValues,
                             navController,
-                            (notesUiState as UiState.Success<List<String>>).data,
+                            (notesUiState as UiState.Success<List<Note>>).data,
                         ) { newNote ->
                             noteListViewModel.addNote(newNote)
                         }
@@ -91,8 +92,8 @@ fun NoteListScreen(
 private fun NoteListContent(
     paddingValues: PaddingValues,
     navController: NavHostController,
-    tasks: List<String>,
-    addNoteClicked: (newNote: String) -> Unit
+    notes: List<Note>,
+    addNoteClicked: (newNote: Note) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -104,8 +105,8 @@ private fun NoteListContent(
         LazyColumn(
             modifier = Modifier.weight(1f)
         ) {
-            items(tasks.size) { index ->
-                TaskRow(task = tasks[index], onTaskClick = {
+            items(notes.size) { index ->
+                TaskRow(note = notes[index], onTaskClick = {
                     navController.navigate("taskDetail/$index")
                 })
             }
@@ -156,7 +157,7 @@ private fun NoteListContent(
             Button(
                 onClick = {
                     if (newNote.text.isNotBlank()) {
-                        addNoteClicked(newNote.text)
+                        addNoteClicked(com.itc.notes.domain.model.Note(newNote.text))
                         newNote = TextFieldValue("")
                     }
                 },
@@ -172,7 +173,7 @@ private fun NoteListContent(
 }
 
 @Composable
-fun TaskRow(task: String, onTaskClick: () -> Unit) {
+fun TaskRow(note: Note, onTaskClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -181,7 +182,7 @@ fun TaskRow(task: String, onTaskClick: () -> Unit) {
             .background(MaterialTheme.colorScheme.surface)
     ) {
         Text(
-            text = task,
+            text = note.content,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface
         )

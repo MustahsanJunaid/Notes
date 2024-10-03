@@ -24,6 +24,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.itc.notes.R
+import com.itc.notes.domain.model.Note
 import com.itc.notes.ui.common.CircularIndeterminateProgressBar
 import com.itc.notes.ui.common.UiState
 import com.itc.notes.ui.theme.NotesTheme
@@ -39,7 +40,7 @@ fun NoteDetailScreen(
 
     // Trigger getNote when the screen first composes using LaunchedEffect
     LaunchedEffect(taskId) {
-        noteDetailViewModel.getNote(taskId.toInt())
+        noteDetailViewModel.getNoteDetails(taskId.toInt())
 
     }
 
@@ -73,7 +74,7 @@ fun NoteDetailScreen(
                     CircularIndeterminateProgressBar(verticalBias = 0.5f)
                 }
 
-                is UiState.Success<String> -> {
+                is UiState.Success<*> -> {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -88,7 +89,7 @@ fun NoteDetailScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = (noteUiState as UiState.Success<String>).data,
+                            text = (noteUiState as UiState.Success<Note>).data.content,
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }

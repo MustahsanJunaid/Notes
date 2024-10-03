@@ -2,8 +2,10 @@ package com.itc.notes.ui.screens.notelist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.itc.notes.data.repository.NoteRepository
-import com.itc.notes.data.repository.RemoteNoteRepository
+import com.itc.notes.domain.model.Note
+import com.itc.notes.domain.usecase.AddNoteUseCase
+import com.itc.notes.domain.usecase.DeleteNoteUseCase
+import com.itc.notes.domain.usecase.GetNotesUseCase
 import com.itc.notes.ui.common.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -14,11 +16,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class NoteListViewModel @Inject constructor(
-    private val noteRepository: NoteRepository
+    private val getNotesUseCase: GetNotesUseCase,
+    private val addNoteUseCase: AddNoteUseCase,
+    private val deleteNoteUseCase: DeleteNoteUseCase
 ) : ViewModel() {
 
-    private val _noteListUiState = MutableStateFlow<UiState<List<String>>>(UiState.Loading)
-    val noteListUiState: StateFlow<UiState<List<String>>> = _noteListUiState
+    private val _noteListUiState = MutableStateFlow<UiState>(UiState.Loading)
+    val noteListUiState: StateFlow<UiState> = _noteListUiState
 
 //    private val _notes = MutableStateFlow<List<String>>(emptyList())
 //    val notes: StateFlow<List<String>> = _notes
@@ -30,21 +34,38 @@ class NoteListViewModel @Inject constructor(
     private fun loadNotes() {
         _noteListUiState.value = UiState.Loading
         viewModelScope.launch(Dispatchers.IO) {
-            _noteListUiState.value = UiState.Success(noteRepository.getNotes())
+            try {
+                val notes = getNotesUseCase.execute()
+                _noteListUiState.value = UiState.Success(notes)
+            } catch (e: Exception) {
+                _noteListUiState.value = UiState.Error(e)
+            }
         }
     }
 
-    fun addNote(newNote: String) {
+    fun addNote(newNote: Note) {
+        _noteListUiState.value = UiState.Loading
         viewModelScope.launch(Dispatchers.IO) {
-            _noteListUiState.value = UiState.Loading
-            _noteListUiState.value = UiState.Success(noteRepository.addNote(newNote))
+            try {
+                addNoteUseCase.execute(newNote)
+                val updatedNotes = getNotesUseCase.execute()  // Refresh the list
+                _noteListUiState.value = UiState.Success(updatedNotes)
+            } catch (e: Exception) {
+                _noteListUiState.value = UiState.Error(e)
+            }
         }
     }
 
     fun deleteNote(noteId: Int) {
+        _noteListUiState.value = UiState.Loading
         viewModelScope.launch(Dispatchers.IO) {
-            _noteListUiState.value = UiState.Loading
-            _noteListUiState.value = UiState.Success(noteRepository.deleteNote(noteId))
+            try {
+                deleteNoteUseCase.execute(noteId)
+                val updatedNotes = getNotesUseCase.execute()  // Refresh the list
+                _noteListUiState.value = UiState.Success(updatedNotes)
+            } catch (e: Exception) {
+                _noteListUiState.value = UiState.Error(e)
+            }
         }
     }
 }

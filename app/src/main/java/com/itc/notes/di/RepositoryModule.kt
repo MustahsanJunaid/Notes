@@ -1,7 +1,7 @@
 package com.itc.notes.di
 
 import com.itc.notes.data.remote.NotesApi
-import com.itc.notes.data.repository.NoteRepository
+import com.itc.notes.domain.repository.NoteRepository
 import com.itc.notes.data.repository.RemoteNoteRepository
 import dagger.Module
 import dagger.Provides
