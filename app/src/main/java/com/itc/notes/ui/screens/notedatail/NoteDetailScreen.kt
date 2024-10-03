@@ -31,15 +31,15 @@ import com.itc.notes.ui.theme.NotesTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteDetailScreen(
-    taskId: String,
-    noteDetailViewModel: NoteDetailViewModel = hiltViewModel(),
+    taskId: Int,
+    viewModel: NoteDetailViewModel = hiltViewModel(),
     navController: NavHostController
 ) {
-    val noteUiState by noteDetailViewModel.noteUiState.collectAsState()
+    val viewState by viewModel.viewState.collectAsState()
 
     // Trigger getNote when the screen first composes using LaunchedEffect
     LaunchedEffect(taskId) {
-        noteDetailViewModel.getNote(taskId.toInt())
+        viewModel.handleIntent(NoteDetailIntent.LoadNoteDetail(taskId))
 
     }
 
@@ -68,19 +68,26 @@ fun NoteDetailScreen(
             )
         }) { contentPadding ->
 
-            when (noteUiState) {
-                is UiState.Loading -> {
+            when {
+                viewState.isLoading -> {
                     CircularIndeterminateProgressBar(verticalBias = 0.5f)
                 }
 
-                is UiState.Success<String> -> {
+                viewState.error != null -> {
+                    Text(text = "Something went wrong")
+                }
+
+                else -> {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(contentPadding)
                             .padding(16.dp) // Custom padding inside content
                     ) {
-                        Text(text = "Task ID: $taskId", style = MaterialTheme.typography.headlineLarge)
+                        Text(
+                            text = "Task ID: $taskId",
+                            style = MaterialTheme.typography.headlineLarge
+                        )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text = "Details for Task ID: $taskId",
@@ -88,14 +95,10 @@ fun NoteDetailScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = (noteUiState as UiState.Success<String>).data,
+                            text = viewState.note.orEmpty(),
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
-                }
-
-                is UiState.Error -> {
-                    Text(text = "Something went wrong")
                 }
             }
         }
@@ -110,7 +113,7 @@ fun NoteDetailScreen(
 @Composable
 fun TaskDetailScreenLightModePreview() {
     val navController = rememberNavController()
-    NoteDetailScreen(taskId = "1", navController = navController)
+    NoteDetailScreen(taskId = 1, navController = navController)
 }
 
 @Preview(
@@ -120,7 +123,7 @@ fun TaskDetailScreenLightModePreview() {
 @Composable
 fun TaskDetailScreenDarkModePreview() {
     val navController = rememberNavController()
-    NoteDetailScreen(taskId = "1", navController = navController)
+    NoteDetailScreen(taskId = 1, navController = navController)
 }
 
 @Preview(
@@ -131,5 +134,5 @@ fun TaskDetailScreenDarkModePreview() {
 @Composable
 fun TaskDetailScreenArabicModePreview() {
     val navController = rememberNavController()
-    NoteDetailScreen(taskId = "1", navController = navController)
+    NoteDetailScreen(taskId = 1, navController = navController)
 }

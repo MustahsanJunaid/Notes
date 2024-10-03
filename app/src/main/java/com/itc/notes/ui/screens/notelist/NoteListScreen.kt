@@ -32,9 +32,13 @@ import com.itc.notes.ui.theme.NotesTheme
 @Composable
 fun NoteListScreen(
     navController: NavHostController,
-    noteListViewModel: NoteListViewModel = hiltViewModel()
+    viewModel: NoteListViewModel = hiltViewModel()
 ) {
-    val notesUiState by noteListViewModel.noteListUiState.collectAsState()
+    val viewState by viewModel.viewState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.handleIntent(NoteListIntent.LoadNotes)
+    }
 
     // Scaffold with a TopAppBar
     NotesTheme {
@@ -62,23 +66,23 @@ fun NoteListScreen(
                 )
             },
             content = { paddingValues ->
-                when (notesUiState) {
-                    is UiState.Loading -> {
+                when {
+                    viewState.isLoading -> {
                         CircularIndeterminateProgressBar(verticalBias = 0.5f)
                     }
 
-                    is UiState.Success<List<String>> -> {
+                    viewState.error != null -> {
+                        Text(text = "Something went wrong")
+                    }
+
+                    else -> {
                         NoteListContent(
                             paddingValues,
                             navController,
-                            (notesUiState as UiState.Success<List<String>>).data,
+                            viewState.notes,
                         ) { newNote ->
-                            noteListViewModel.addNote(newNote)
+                            viewModel.handleIntent(NoteListIntent.AddNoteIntent(newNote))
                         }
-                    }
-
-                    is UiState.Error -> {
-                        Text(text = "Something went wrong")
                     }
                 }
 

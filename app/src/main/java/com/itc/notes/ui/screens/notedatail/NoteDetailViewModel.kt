@@ -1,15 +1,13 @@
 package com.itc.notes.ui.screens.notedatail
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.itc.notes.data.repository.RemoteNoteRepository
-import com.itc.notes.ui.common.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -18,16 +16,23 @@ class NoteDetailViewModel @Inject constructor(
     private val noteRepository: RemoteNoteRepository
 ) : ViewModel() {
 
-    private val _noteUiState = MutableStateFlow<UiState<String>>(UiState.Loading)
-    val noteUiState: StateFlow<UiState<String>> = _noteUiState
+    private val _viewState = MutableStateFlow(NoteDetailViewState())
+    val viewState: StateFlow<NoteDetailViewState> = _viewState.asStateFlow()
 
-    fun getNote(noteId: Int) {
-        _noteUiState.value = UiState.Loading
+    fun handleIntent(intent: NoteDetailIntent) {
+        when (intent) {
+            is NoteDetailIntent.LoadNoteDetail -> loadNoteDetail(intent.noteId)
+        }
+    }
+
+    private fun loadNoteDetail(noteId: Int) {
+        _viewState.value = NoteDetailViewState(isLoading = true)
         viewModelScope.launch(Dispatchers.IO) {
-            noteRepository.getNoteDetail(noteId)?.let {
-                _noteUiState.value = UiState.Success(it)
-            } ?: run {
-                _noteUiState.value = UiState.Error(Exception("Note not found"))
+            val note = noteRepository.getNoteDetail(noteId)
+            if (note != null) {
+                _viewState.value = NoteDetailViewState(note = note)
+            } else {
+                _viewState.value = NoteDetailViewState(error = "Note not found")
             }
         }
     }

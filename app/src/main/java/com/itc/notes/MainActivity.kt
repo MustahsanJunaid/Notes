@@ -37,7 +37,7 @@ fun NotesApp() {
             composable("taskDetail/{taskId}") { backStackEntry ->
                 NoteDetailScreen(
                     navController = navController,
-                    taskId = backStackEntry.arguments?.getString("taskId") ?: "0",
+                    taskId = (backStackEntry.arguments?.getString("taskId") ?: "0").toInt(),
                 )
             }
         }

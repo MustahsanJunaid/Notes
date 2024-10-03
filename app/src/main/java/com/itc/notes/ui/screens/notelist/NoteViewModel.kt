@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -17,34 +18,38 @@ class NoteListViewModel @Inject constructor(
     private val noteRepository: NoteRepository
 ) : ViewModel() {
 
-    private val _noteListUiState = MutableStateFlow<UiState<List<String>>>(UiState.Loading)
-    val noteListUiState: StateFlow<UiState<List<String>>> = _noteListUiState
+    private val _viewState = MutableStateFlow(NoteListViewState())
+    val viewState: StateFlow<NoteListViewState> = _viewState.asStateFlow()
 
-//    private val _notes = MutableStateFlow<List<String>>(emptyList())
-//    val notes: StateFlow<List<String>> = _notes
-
-    init {
-        loadNotes()
+    fun handleIntent(intent: NoteListIntent) {
+        when (intent) {
+            is NoteListIntent.LoadNotes -> loadNotes()
+            is NoteListIntent.AddNoteIntent -> addNoteToRepo(intent.note)
+            is NoteListIntent.DeleteNoteIntent -> deleteNoteFromRepo(intent.noteId)
+        }
     }
 
     private fun loadNotes() {
-        _noteListUiState.value = UiState.Loading
+        _viewState.value = NoteListViewState(isLoading = true)
         viewModelScope.launch(Dispatchers.IO) {
-            _noteListUiState.value = UiState.Success(noteRepository.getNotes())
+            try {
+                val notes = noteRepository.getNotes()
+                _viewState.value = NoteListViewState(notes = notes)
+            } catch (e: Exception) {
+                _viewState.value = NoteListViewState(error = e.message)
+            }
         }
     }
 
-    fun addNote(newNote: String) {
+    private fun addNoteToRepo(note: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            _noteListUiState.value = UiState.Loading
-            _noteListUiState.value = UiState.Success(noteRepository.addNote(newNote))
+            // Handle adding note
         }
     }
 
-    fun deleteNote(noteId: Int) {
+    private fun deleteNoteFromRepo(noteId: Int) {
         viewModelScope.launch(Dispatchers.IO) {
-            _noteListUiState.value = UiState.Loading
-            _noteListUiState.value = UiState.Success(noteRepository.deleteNote(noteId))
+            // Handle deleting note
         }
     }
 }
